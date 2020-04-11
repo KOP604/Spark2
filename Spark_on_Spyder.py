@@ -148,20 +148,8 @@ movies.select(vlist[19:23]).show(10)
 movies.select(vlist[23:]).show(10)
 
 # In[ ]:
-print(vlist)
-
 #from pyspark.sql.types import DateType
 #movies = movies.withColumn("BDT", movies[vlist[7]].cast(DateType()))
-"""
-['_unit_id', '_golden', '_unit_state', '_trusted_judgments', 
- '_last_judgment_at', 'birthplace', 'birthplace:confidence', 
- 'date_of_birth', 'date_of_birth:confidence', 'race_ethnicity', 
- 'race_ethnicity:confidence', 'religion', 'religion:confidence', 
- 'sexual_orientation', 'sexual_orientation:confidence', 'year_of_award',
- 'year_of_award:confidence', 'award', 'biourl', 'birthplace_gold', 
- 'date_of_birth_gold', 'movie', 'person', 'race_ethnicity_gold',
- 'religion_gold', 'sexual_orientation_gold', 'year_of_award_gold']
-"""
 
 # In[ ]:
 movies.select('year_of_award').show(10)
@@ -174,56 +162,32 @@ movies.groupBy("_unit_state").count().show()
 movies.select("race_ethnicity").distinct().show(10)
 movies.groupBy("race_ethnicity").count().show()
 
-#Age
-movies.select('date_of_birth').show(10)
-movies.select('date_of_birth').dtypes
 
+# Create new column Age
 from pyspark.sql import functions as F
 movies=movies.withColumn("BDT",F.to_date(movies["date_of_birth"], "d-MMM-yyyy"))
 movies=movies.withColumn("BDT2",F.to_date(movies["date_of_birth"], "d-MMM-yy"))
-             
-movies.select('date_of_birth', 'BDT','BDT2').show(10)
+           
 movies.where(movies['BDT'].isNull()).select('date_of_birth', 'BDT','BDT2').show(10)
 #alternatively
 movies.where("BDT is Null").select('date_of_birth', 'BDT','BDT2').show(10)
 
-
-#iamhere 
-
 movies=movies.withColumn('YR1', F.year(movies['BDT']))
 movies=movies.withColumn('YR2', F.year(movies['BDT2'])-100)
 
-movies.drop('BYR','YR1','YR2')
 from pyspark.sql.functions import when
 movies=movies.withColumn('BYR', when(movies['BDT'].isNotNull(),movies['YR1']) \
                                .otherwise(movies['YR2']))
-movies.describe('BYR').show()
-movies.where(movies['BDT'].isNull()).select('date_of_birth', 'BDT','BDT2','YR1','YR2').show(10)
-movies.where(movies['BDT'].isNotNull()).select('date_of_birth', 'BDT','BDT2','YR1','YR2').show(10)
-
-movies.where(movies['BDT'].isNull()).select('date_of_birth', 'BYR').show(10)
-movies.where(movies['BDT'].isNotNull()).select('date_of_birth', 'BYR').show(10)
-
-movies.drop('YR1','YR2')
-
 movies=movies.withColumn('Age', movies['year_of_award']-movies['BYR'])
-movies.describe('Age').show()
 movies.select(F.min('Age').alias('min'), F.max('Age').alias('max')).show()
 
-                       
-#'birthplace'
-movies.select('birthplace').distinct().count()
-movies.select('birthplace').show(10)
-
+# bithplace state and city
 split_col = pyspark.sql.functions.split(df['my_str_col'], '-')
 movies = movies.withColumn('city', F.split(movies['birthplace'],',').getItem(0))
 movies = movies.withColumn('ST', F.split(movies['birthplace'],',').getItem(1))
 
-movies.select('city','state','birthplace').show(10)
 movies.groupBy('ST').count().sort('count',ascending=False).show(10)
-
-movies.select('birthplace').filter(movies['ST'].isNull()).show(10)
-movies.select('birthplace','city').filter(movies['state'].isNull()).distinct().show()
+movies.select('birthplace','city').filter("ST is Null").distinct().show()
 
 movies=movies.withColumn('ST',F.when(movies['birthplace']=='New York City','NY').otherwise(movies['ST']))
 movies=movies.select('*', F.upper('ST').alias('STE'))
