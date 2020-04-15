@@ -41,6 +41,7 @@ print(fraud.rdd.getNumPartitions()) #5
 fraud.createOrReplaceTempView('fraud')
 fs=fraud.sample(False, 0.00001, seed=1999).toPandas()
 
+#DataFrame SQL/API
 fraud.select("state").distinct().count() #51
 fraud.count()
 fraud.printSchema()
@@ -56,6 +57,7 @@ spark.sql("SELECT fraudRisk, mean(balance) as bal, mean(numTrans) as txn, \
 fraud.groupBy('state').avg('balance').filter('avg(balance)>4115').show()
 fraud.groupBy('state').min('balance').filter('state>35').show()
 
+#all stats require spark's built-in functions
 import pyspark.sql.functions as F
 fraud.groupBy('state').agg(F.max("balance"),F.mean("fraudRisk")).show()
 
@@ -68,6 +70,8 @@ fraud.filter('state<35 and gender=2').stat.crosstab('gender','fraudRisk').orderB
 fraud = fraud.select('*', fraud["gender"].cast("string"))
 fraud.dtypes
 
+# Spark SQL
+spark.sql("show tables").show()
 
 
 
